@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sb
 
 # Load dataset
-df = pd.read_csv("../Datasets/CARS.csv")
+df = pd.read_csv("CARS.csv")
 
 # Streamlit app title
 st.title("Car Horsepower Visualization")
