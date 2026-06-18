@@ -4,203 +4,143 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 
-
-# -------------------------
-# Page Configuration
-# -------------------------
+# Page Config
 st.set_page_config(
-    page_title="Premium Car Dashboard",
+    page_title="Premium Car Analytics Dashboard",
     page_icon="🚘",
     layout="wide"
 )
 
-
-# -------------------------
-# Custom Dark Theme
-# -------------------------
+# Dark Blue Theme
 st.markdown("""
 <style>
-
-.stApp{
-    background: #050816;
+.stApp {
+    background-color: #050816;
     color: white;
 }
 
-/* Sidebar */
-section[data-testid="stSidebar"]{
+section[data-testid="stSidebar"] {
     background: linear-gradient(180deg,#000000,#001f3f);
 }
 
-/* Headings */
-h1,h2,h3{
-    color:#00BFFF;
-    text-align:center;
-    font-weight:bold;
+h1, h2, h3 {
+    color: #00BFFF;
+    text-align: center;
+    font-weight: bold;
 }
 
-/* Metrics */
-[data-testid="stMetric"]{
-    background:#071425;
-    border:1px solid #00BFFF;
-    padding:15px;
-    border-radius:15px;
-    box-shadow:0 0 12px #00BFFF;
-}
-
-/* Select Box */
-.stSelectbox label{
-    color:white !important;
+[data-testid="stMetric"] {
+    background: #071425;
+    border: 1px solid #00BFFF;
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 0 15px #00BFFF;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-
-# -------------------------
-# Load Dataset
-# -------------------------
+# Load Data
 df = pd.read_csv("CARS.csv")
 
+# Clean Price Columns
+df["MSRP"] = df["MSRP"].replace("[$,]", "", regex=True).astype(int)
+df["Invoice"] = df["Invoice"].replace("[$,]", "", regex=True).astype(int)
 
-# Clean price columns
-df["MSRP"] = (
-    df["MSRP"]
-    .replace("[$,]", "", regex=True)
-    .astype(int)
-)
-
-df["Invoice"] = (
-    df["Invoice"]
-    .replace("[$,]", "", regex=True)
-    .astype(int)
-)
-
-
-# -------------------------
 # Sidebar Filters
-# -------------------------
 st.sidebar.title("🔎 Filter Cars")
-
 
 brand_list = sorted(df["Make"].unique())
 
 brand = st.sidebar.selectbox(
-    "Select Brand",
+    "Select Car Brand",
     brand_list
 )
 
-
 brand_df = df[df["Make"] == brand]
 
-
-types = sorted(brand_df["Type"].unique())
+type_list = sorted(brand_df["Type"].unique())
 
 car_type = st.sidebar.selectbox(
-    "Select Type",
-    types
+    "Select Car Type",
+    type_list
 )
 
+filtered_df = brand_df[brand_df["Type"] == car_type]
 
-filtered = brand_df[brand_df["Type"] == car_type]
-
-
-# -------------------------
-# Brand Logo Section
-# -------------------------
-
+# Brand Logo & Heading
 logo_path = f"logos/{brand}.png"
 
-
-col1, col2 = st.columns([1, 5])
-
+col1, col2 = st.columns([1, 4])
 
 with col1:
     if os.path.exists(logo_path):
-        st.image(
-            logo_path,
-            width=130
-        )
-
+        st.image(logo_path, width=130)
 
 with col2:
     st.markdown(
-        f"""
-        <h1>{brand} Analytics Dashboard</h1>
-        """,
+        f"<h1>{brand} Car Dashboard</h1>",
         unsafe_allow_html=True
     )
 
 
-# -------------------------
-# Dashboard Metrics
-# -------------------------
-
+# Dynamic Metrics
 m1, m2, m3, m4 = st.columns(4)
 
-
 m1.metric(
-    "🚗 Total Cars",
-    len(df)
+    "🚗 Models",
+    len(brand_df)
 )
 
 m2.metric(
-    "🏢 Brands",
-    df["Make"].nunique()
+    "🚘 Type",
+    brand_df["Type"].nunique()
 )
-
 
 m3.metric(
     "⚙ Avg Horsepower",
-    int(df["Horsepower"].mean())
+    f"{int(brand_df['Horsepower'].mean())} HP"
 )
 
-
 m4.metric(
-    "💰 Max Price",
-    f"${df['MSRP'].max():,}"
+    "💰 Highest Price",
+    f"${brand_df['MSRP'].max():,}"
 )
 
 
 plt.style.use("dark_background")
 
-
-# =========================
-# SECTION 1
-# =========================
+# ----------------- Section 1 -----------------
 
 st.header("📊 Brand Performance")
 
-
 c1, c2 = st.columns(2)
 
-
 with c1:
-
     fig, ax = plt.subplots(figsize=(8,5))
 
     sns.barplot(
-        data=filtered,
+        data=filtered_df,
         x="Model",
         y="MPG_City",
         palette="Blues",
         ax=ax
     )
 
-    ax.set_title("City MPG by Model")
+    ax.set_title("City Mileage by Model")
     plt.xticks(rotation=90)
 
     st.pyplot(fig)
 
 
 with c2:
-
     fig, ax = plt.subplots(figsize=(8,5))
 
     sns.scatterplot(
-        data=df,
+        data=brand_df,
         x="Horsepower",
         y="EngineSize",
-        hue="Origin",
+        hue="Type",
         ax=ax
     )
 
@@ -209,28 +149,26 @@ with c2:
     st.pyplot(fig)
 
 
-# =========================
-# SECTION 2
-# =========================
+# ----------------- Section 2 -----------------
 
 st.header("📈 Market Insights")
 
-
 c3, c4 = st.columns(2)
-
 
 with c3:
 
     fig, ax = plt.subplots()
 
     sns.countplot(
-        data=df,
+        data=brand_df,
         x="Type",
-        palette="Blues",
+        palette="winter",
         ax=ax
     )
 
     plt.xticks(rotation=45)
+
+    ax.set_title("Available Car Types")
 
     st.pyplot(fig)
 
@@ -245,10 +183,9 @@ with c3:
         autopct="%1.1f%%"
     )
 
-    ax.set_title("Car Origin Distribution")
+    ax.set_title("Overall Car Origin Distribution")
 
     st.pyplot(fig)
-
 
 
 with c4:
@@ -256,10 +193,10 @@ with c4:
     fig, ax = plt.subplots()
 
     sns.barplot(
-        data=df,
+        data=brand_df,
         x="DriveTrain",
         y="MSRP",
-        palette="winter",
+        palette="cool",
         ax=ax
     )
 
@@ -271,46 +208,37 @@ with c4:
     fig, ax = plt.subplots()
 
     sns.pointplot(
-        data=df,
+        data=brand_df,
         x="DriveTrain",
         y="Horsepower",
         color="cyan",
         ax=ax
     )
 
-    ax.set_title(
-        "Horsepower by DriveTrain"
-    )
+    ax.set_title("Horsepower by Drive Train")
 
     st.pyplot(fig)
 
 
-# =========================
-# SECTION 3
-# =========================
+# ----------------- Section 3 -----------------
 
 st.header("🔥 Correlation Heatmap")
 
-
-fig, ax = plt.subplots(
-    figsize=(12,6)
-)
-
+fig, ax = plt.subplots(figsize=(12,6))
 
 sns.heatmap(
-    df.corr(numeric_only=True),
+    brand_df.corr(numeric_only=True),
     annot=True,
     cmap="Blues",
     ax=ax
 )
-
 
 st.pyplot(fig)
 
 
 # Footer
 st.success(
-    "✅ Premium Car Analytics Dashboard Loaded Successfully"
+    f"✅ {brand} Analytics Dashboard Loaded Successfully"
 )
 
 
